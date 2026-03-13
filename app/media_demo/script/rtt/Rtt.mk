@@ -129,6 +129,9 @@ endif
 SRCS += $(wildcard components/libsample_common/src/*.c)
 SRCS += $(wildcard components/libscaler/src/*.c)
 
+#overlay
+SRCS += $(wildcard $(SAMPLE_DEMO_DIR)/overlay/src/*.c)
+
 #sample_demo include src
 SAMPLE_DEMO_DIR = sample_demo
 INCS += -I$(SAMPLE_DEMO_DIR)
@@ -164,6 +167,7 @@ ISP_INC = $(foreach dir,$(ISP_MODEL_DIR),-I$(dir)/include)
 DSP_SRC = $(foreach dir,$(DSP_MODEL_DIR),$(wildcard $(dir)/src/*.c))
 ISP_SRC = $(foreach dir,$(ISP_MODEL_DIR),$(wildcard $(dir)/src/*.c))
 INCS += -I$(SAMPLE_COMMON_DIR) -I$(CHIP_DIR) -I$(DSP_DIR) -I$(ISP_DIR) $(DSP_INC) $(ISP_INC)
+INCS += -I$(SAMPLE_DEMO_DIR)/overlay/include
 SRCS += $(wildcard $(SAMPLE_COMMON_DIR)/*.c) $(wildcard $(CHIP_DIR)/*.c) $(wildcard $(DSP_DIR)/*.c) $(wildcard $(ISP_DIR)/*.c) $(DSP_SRC) $(ISP_SRC)
 
 export FH_SLT_TEST = y

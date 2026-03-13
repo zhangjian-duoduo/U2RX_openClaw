@@ -1,6 +1,51 @@
 #include "uvc_rtt_config.h"
 
+// Feature config header
+#include "feature_config.h"
+
+#if ENABLE_OSD_CROSS
+#include "dsp_ext/FHAdv_OSD_mpi.h"
+#include "overlay_gbox.h"
+#include "sample_common_overlay.h"
+#endif
+
 static char *model_name = MODEL_TAG_UVC_CONFIG;
+
+extern void *fh_dma_memcpy(void *dst, const void *src, int len);
+
+// Draw cross on YUV data
+#if ENABLE_OSD_CROSS
+static void draw_cross_yuv(FH_UINT8 *ybuf, FH_UINT8 *uvbuf, FH_SINT32 width, FH_SINT32 height)
+{
+    FH_SINT32 center_x = width / 2;
+    FH_SINT32 center_y = height / 2;
+    FH_SINT32 line_width = 10;
+    FH_SINT32 i, j;
+    
+    // Red color in YUV: Y=81
+    FH_UINT8 red_y = 81;
+    
+    // Draw horizontal line (red, full width)
+    for (j = center_y - line_width/2; j < center_y + line_width/2 && j < height; j++)
+    {
+        if (j < 0) continue;
+        for (i = 0; i < width; i++)
+        {
+            ybuf[j * width + i] = red_y;
+        }
+    }
+    
+    // Draw vertical line (red, full height)
+    for (j = 0; j < height; j++)
+    {
+        for (i = center_x - line_width/2; i < center_x + line_width/2 && i < width; i++)
+        {
+            if (i < 0) continue;
+            ybuf[j * width + i] = red_y;
+        }
+    }
+}
+#endif
 
 extern void *fh_dma_memcpy(void *dst, const void *src, int len);
 
@@ -36,6 +81,9 @@ FH_SINT32 getVPUStreamToUVCList(FH_SINT32 grp_id, FH_SINT32 chn_id, struct uvc_d
                 yuv_buf->uvsize = pDev->width * pDev->height / 2;
                 fh_dma_memcpy(yuv_buf->data, stream.frm_scan.luma.data.vbase, stream.frm_scan.luma.data.size);
                 fh_dma_memcpy(yuv_buf->data + stream.frm_scan.luma.data.size, stream.frm_scan.chroma.data.vbase, stream.frm_scan.chroma.data.size);
+#if ENABLE_OSD_CROSS
+                draw_cross_yuv(yuv_buf->data, yuv_buf->data + yuv_buf->ysize, pDev->width, pDev->height);
+#endif
             }
             else if (pDev->fcc == V4L2_PIX_FMT_YUY2 && stream.data_format == VPU_VOMODE_YUYV)
             {
@@ -273,7 +321,7 @@ FH_SINT32 getENCStreamToUVC(FH_SINT32 grp_id, FH_SINT32 chn_id, struct uvc_dev_a
 
     if (stream.stmtype == FH_STREAM_H264 && streamType == FH_STREAM_H264)
     {
-        if (pDev->g_h264_delay > 1 && enc_chn == pDev->stream_id) // delay未实现 TODO
+        if (pDev->g_h264_delay > 1 && enc_chn == pDev->stream_id) // delay未实�?TODO
         {
             if (pDev->g_h264_delay == 5)
                 FH_VENC_RequestIDR(enc_chn);
@@ -290,7 +338,7 @@ FH_SINT32 getENCStreamToUVC(FH_SINT32 grp_id, FH_SINT32 chn_id, struct uvc_dev_a
     }
     else if (stream.stmtype == FH_STREAM_H265 && streamType == FH_STREAM_H265)
     {
-        if (pDev->g_h265_delay > 1 && enc_chn == pDev->stream_id) // delay未实现 TODO
+        if (pDev->g_h265_delay > 1 && enc_chn == pDev->stream_id) // delay未实�?TODO
         {
             pDev->g_h265_delay--;
             if (pDev->g_h265_delay == 1)
@@ -361,3 +409,126 @@ FH_SINT32 getMJPEGStreamToUVC(FH_SINT32 grp_id, FH_SINT32 chn_id, struct uvc_dev
 Exit:
     return FH_SDK_FAILED;
 }
+
+// ==================== OSD Cross Feature ====================
+
+#if ENABLE_OSD_CROSS
+
+
+static FH_BOOL s_osd_cross_init = FH_FALSE;
+
+/**
+ * @brief Init OSD cross
+ */
+FH_SINT32 osd_cross_init(FH_SINT32 grp_id, FH_SINT32 chn_id, FH_UINT32 width, FH_UINT32 height)
+{
+    FH_SINT32 ret = FH_SDK_SUCCESS;
+    FHT_OSD_CONFIG_t osd_cfg;
+    FHT_OSD_Layer_Config_t layer_cfg;
+    
+    if (s_osd_cross_init)
+    {
+        return FH_SDK_SUCCESS;
+    }
+    
+    // Start OSD subsystem first
+    ret = sample_fh_overlay_start(grp_id);
+    if (ret != FH_SDK_SUCCESS)
+    {
+        SDK_ERR_PRT(model_name, "sample_fh_overlay_start failed, ret=%d\n", ret);
+        return ret;
+    }
+    
+    // Init OSD config
+    memset(&osd_cfg, 0, sizeof(osd_cfg));
+    memset(&layer_cfg, 0, sizeof(layer_cfg));
+    
+    // Config layer params
+    layer_cfg.layerStartX = 0;
+    layer_cfg.layerStartY = 0;
+    layer_cfg.layerMaxWidth = width;
+    layer_cfg.layerMaxHeight = height;
+    layer_cfg.osdSize = 16;
+    
+    // Set transparent
+    layer_cfg.normalColor.fRed = 0;
+    layer_cfg.normalColor.fGreen = 0;
+    layer_cfg.normalColor.fBlue = 0;
+    layer_cfg.normalColor.fAlpha = 0;
+    
+    osd_cfg.osdRotate = 0;
+    osd_cfg.nOsdLayerNum = 1;
+    osd_cfg.pOsdLayerInfo = &layer_cfg;
+    
+    ret = FHAdv_Osd_SetText(grp_id, &osd_cfg);
+    if (ret != FH_SDK_SUCCESS)
+    {
+        SDK_ERR_PRT(model_name, "FHAdv_Osd_SetText failed, ret=%d\n", ret);
+        return ret;
+    }
+    
+    s_osd_cross_init = FH_TRUE;
+    
+    return ret;
+}
+
+/**
+ * @brief ����Ƶ�������Ļ��ƺ�ɫʮ��
+ * @param grp_id VPU��ID
+ * @param chn_id ͨ��ID
+ * @param width ��Ƶ����
+ * @param height ��Ƶ�߶�
+ */
+FH_SINT32 osd_cross_draw(FH_SINT32 grp_id, FH_SINT32 chn_id, FH_UINT32 width, FH_UINT32 height)
+{
+    FH_SINT32 ret = FH_SDK_SUCCESS;
+    OSD_GBOX gbox;
+    
+    // Draw a simple red rectangle in top-left corner for test
+    memset(&gbox, 0, sizeof(gbox));
+    gbox.enable = 1;
+    gbox.gbox_id = 0;
+    gbox.x = 100;
+    gbox.y = 100;
+    gbox.w = 100;
+    gbox.h = 100;
+    gbox.color.fRed = 255;
+    gbox.color.fGreen = 0;
+    gbox.color.fBlue = 0;
+    gbox.color.fAlpha = 255;
+    
+    ret = sample_set_gbox(grp_id, chn_id, &gbox);
+    if (ret != FH_SDK_SUCCESS)
+    {
+        SDK_ERR_PRT(model_name, "sample_set_gbox failed, ret=%d\n", ret);
+        return ret;
+    }
+    
+    return ret;
+}
+
+/**
+ * @brief Close OSD cross
+ */
+FH_SINT32 osd_cross_close(FH_SINT32 grp_id, FH_SINT32 chn_id)
+{
+    FH_SINT32 ret = FH_SDK_SUCCESS;
+    OSD_GBOX gbox;
+    
+    memset(&gbox, 0, sizeof(gbox));
+    gbox.enable = 0;
+    gbox.gbox_id = 0;
+    ret = sample_set_gbox(grp_id, chn_id, &gbox);
+    
+    gbox.gbox_id = 1;
+    ret = sample_set_gbox(grp_id, chn_id, &gbox);
+    
+    s_osd_cross_init = FH_FALSE;
+    
+    return ret;
+}
+
+#endif // ENABLE_OSD_CROSS
+
+
+

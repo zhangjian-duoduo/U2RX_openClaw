@@ -9,6 +9,11 @@
 #include "isp/isp_sensor_if.h"
 #include "dsp_ext/FHAdv_Isp_mpi_v3.h"
 #include "libusb_rtt/usb_video/include/uvc_callback.h"
+#include "sample_common/feature_config.h"
+
+#if ENABLE_OSD_CROSS
+#include "sample_common/FH8626V300/uvc/include/uvc_rtt_config.h"
+#endif
 
 #define SENSOR_SLEEP_DELAY_S 20
 
@@ -39,6 +44,10 @@ FH_VOID uvc_stream_on(FH_SINT32 stream_id)
     set_isp_sleep(FH_APP_GRP_ID, 0);
     pthread_mutex_unlock(&g_mutex_sensor);
     printf("%s:stream_id %d\n", __func__, stream_id);
+#if ENABLE_OSD_CROSS
+    osd_cross_init(0, 0, uvc_dev->width, uvc_dev->height);
+    osd_cross_draw(0, 0, uvc_dev->width, uvc_dev->height);
+#endif
 #ifdef UVC_WINDOWS_HELLO_FACE
     if (stream_id == STREAM_ID2)
         ir_stream_on = 1;
@@ -51,6 +60,9 @@ FH_VOID uvc_stream_off(FH_SINT32 stream_id)
 #ifdef UVC_WINDOWS_HELLO_FACE
     if (stream_id == STREAM_ID2)
         ir_stream_on = 0;
+#endif
+#if ENABLE_OSD_CROSS
+    osd_cross_close(0, 0);
 #endif
     printf("%s:stream_id %d\n", __func__, stream_id);
 }

@@ -144,16 +144,16 @@ static const struct uvc_frame_info uvc_frames_still[] = {
 #endif
 
 static const struct uvc_format_info uvc_formats[] = {
-    //{ V4L2_PIX_FMT_MJPEG, uvc_frames_mjpeg, 1},
+    { V4L2_PIX_FMT_MJPEG, uvc_frames_mjpeg, 1},
 #ifdef YUY2_SUPPORT
-    //{ V4L2_PIX_FMT_YUY2, uvc_frames_yuy2, 1},
+    { V4L2_PIX_FMT_YUY2, uvc_frames_yuy2, 1},
 #endif
 #ifndef ENABLE_PSRAM
 #ifndef UVC_WINDOWS_HELLO_FACE
     { V4L2_PIX_FMT_H264, uvc_frames_h264, 1},
-    //{ V4L2_PIX_FMT_H265, uvc_frames_h265, 1},
+    { V4L2_PIX_FMT_H265, uvc_frames_h265, 1},
 #ifdef NV12_SUPPORT
-    //{ V4L2_PIX_FMT_NV12, uvc_frames_nv12, 1},
+    { V4L2_PIX_FMT_NV12, uvc_frames_nv12, 1},
 #endif
 #endif
 #endif

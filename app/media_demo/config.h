@@ -6,7 +6,7 @@
 #define MAX_GRP_NUM 2
 /*Automatically generated make config: don't edit */
 /*Media Demo Configuration */
-/*Fri Mar 13 12:55:36 2026 */
+/*Fri Mar 13 15:54:51 2026 */
 
 /*EMU is not set */
 /*CONFIG_SETTING_ENABLE is not set */
