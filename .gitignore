@@ -1,0 +1,22 @@
+# 编译产物
+out/
+build/
+*.o
+*.a
+*.so
+*.d
+
+# 压缩包
+*.rar
+*.zip
+*.tgz
+
+# 临时文件
+*.bak
+*.swp
+*~
+
+# IDE
+.si4project/
+.vscode/
+.idea/

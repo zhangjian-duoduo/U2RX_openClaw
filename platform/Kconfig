@@ -1,0 +1,142 @@
+config SDKROOT
+    string
+    option env="SDKROOT"
+
+menu "Platform Configuration"
+
+config RT_USING_CALIBRATE
+    bool
+
+config CONFIG_ARCH_FULLHAN
+    bool
+    select RT_USING_TIMER_SOFT
+    select RT_USING_GPIO
+    select RT_USING_CALIBRATE
+
+config CONFIG_ARCH_FH8862
+    bool
+    default n
+    select ARCH_ARM_CORTEX_A7
+    select CONFIG_ARCH_FULLHAN
+
+config CONFIG_ARCH_MC632X
+    bool
+    default n
+    select ARCH_ARM_CORTEX_A7
+    select CONFIG_ARCH_FULLHAN
+
+config CONFIG_ARCH_FH885xV500
+    bool
+    default n
+    select ARCH_ARM_CORTEX_A7
+    select CONFIG_ARCH_FULLHAN
+
+config CONFIG_ARCH_FH8626V300
+    bool
+    default n
+    select ARCH_ARM_ARM11
+    select CONFIG_ARCH_FULLHAN
+
+config FH_USING_AON_PIN
+    bool
+    depends on CONFIG_ARCH_FH8626V300
+    default y
+
+choice
+    prompt "Choose chip"
+    default CONFIG_CHIP_FH8626V300
+
+config CONFIG_CHIP_FH8862
+    bool "FH8862"
+    select CONFIG_ARCH_FH8862
+
+config CONFIG_CHIP_MC632X
+    bool "MC632X"
+    select CONFIG_ARCH_MC632X
+
+config CONFIG_CHIP_FH8856V500
+    bool "FH8856V500"
+    select CONFIG_ARCH_FH885xV500
+
+config CONFIG_CHIP_FH8857V500
+    bool "FH8857V500"
+    select CONFIG_ARCH_FH885xV500
+
+config CONFIG_CHIP_FH8626V300
+    bool "FH8626V300"
+    select CONFIG_ARCH_FH8626V300
+
+endchoice
+
+config FH_USING_VMM
+    bool "arm enable vmm"
+    depends on APP_CONFIG_MEDIA_DEMO
+    default n
+
+config FH_USING_DDRBOOT
+    bool "boot arc using ddrboot"
+    depends on APP_CONFIG_RPC_VIDEO
+    default n
+
+if !FH_USING_DDRBOOT
+    config FH_USING_LOAD_NBG
+        bool "enable arm load nbg file"
+        depends on APP_CONFIG_RPC_VIDEO
+        default n
+endif
+
+config FH_USING_PSRAM
+    bool "enable psram"
+    default n
+
+config FH_FAST_BOOT
+    bool "arm boot fast"
+    default n
+
+choice
+    prompt "Choose board"
+    default CONFIG_BOARD_APP
+
+config CONFIG_BOARD_APP
+    bool "app board"
+
+config CONFIG_BOARD_TEST
+    bool "test board"
+
+endchoice
+
+# comment "Boot stages"
+config FH_ENABLE_SELF_LOAD_CODE
+    bool "boot in multi-stage"
+    default y
+
+if FH_ENABLE_SELF_LOAD_CODE
+    choice
+        prompt "Choose compress method"
+        depends on FH_ENABLE_SELF_LOAD_CODE
+        default FH_CONFIG_COMPRESS_LZO
+
+        config FH_CONFIG_COMPRESS_LZO
+            bool "LZO"
+            depends on FH_USING_LZOP
+            help
+                fastest decompression, for fastboot
+
+        config FH_CONFIG_COMPRESS_GZIP
+            bool "GZIP"
+            depends on FH_USING_ZLIB
+            help
+                balance for decompression speed and compress ratio
+
+        config FH_CONFIG_COMPRESS_LZMA
+            bool "LZMA"
+            depends on FH_USING_LZMA
+            help
+                best compression, use least flash storage space.
+    endchoice
+
+endif
+
+source "$SDKROOT/platform/cpu/Kconfig"
+
+endmenu

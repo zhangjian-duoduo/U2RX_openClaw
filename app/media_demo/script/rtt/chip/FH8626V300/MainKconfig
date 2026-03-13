@@ -1,0 +1,62 @@
+config EMU
+	bool "emulation enable"
+	default n
+
+config CONFIG_SETTING_ENABLE
+	bool "Setting Config Enable"
+	default n
+
+	if CONFIG_SETTING_ENABLE
+		config CONFIG_SETTING_FILE
+			string "Setting Config File"
+			default "mcdb.bin"
+	endif
+
+choice
+	prompt "sensor mode"
+	default CONFIG_VICAP_ONLINE_MODE
+
+	config CONFIG_VICAP_ONLINE_MODE
+		bool "sensor online enable"
+
+	config CONFIG_VICAP_ONLINE_ONLINE_MODE
+		bool "sensor online_online enable"
+endchoice
+
+config CONFIG_SENSOR_SLAVE_MODE
+	bool "sensor salve mode"
+	default n
+
+config I2C_ON_ARM
+	bool "Sensor I2C On ARM"
+	default n
+
+source "$ROOT/script/rtt/chip/$CHIP_ID/Kconfig/Uvc_Kconfig"
+
+source "$ROOT/script/rtt/chip/$CHIP_ID/Kconfig/App_Kconfig"
+
+source "$ROOT/script/rtt/chip/$CHIP_ID/Kconfig/Group_0/Group_Kconfig"
+
+source "$ROOT/script/rtt/chip/$CHIP_ID/Kconfig/Group_1/Group_Kconfig"
+
+config FH_APP_USING_COOLVIEW
+	bool "Open Coolview"
+	default n
+
+	if FH_APP_USING_COOLVIEW
+		choice
+			prompt "Select Coolview type"
+				default FH_APP_TCP_COOLVIEW
+
+			config FH_APP_TCP_COOLVIEW
+				bool "using tcp coolview"
+
+			config FH_APP_CDC_COOLVIEW
+				depends on UVC_ENABLE
+				bool "using usb_vcom coolview"
+		endchoice
+	endif
+
+config ENABLE_PSRAM
+	bool "using psram"
+	default n

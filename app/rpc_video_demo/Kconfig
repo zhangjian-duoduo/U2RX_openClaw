@@ -1,0 +1,16 @@
+config FH_USING_AOV_DEMO
+    bool "choice aov demo"
+	default n
+
+config OPEN_COOLVIEW
+    bool "open coolview"
+	default n
+
+config OPEN_RECORD
+    bool "open record"
+	default n
+
+config FH_USING_STREAM_UDP
+    bool "stream UDP"
+	default y
+
